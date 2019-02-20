@@ -1,0 +1,23 @@
+{
+  "name": "@babel/plugin-transform-gl-matrix",
+  "version": "0.1.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "babel test/index.js -o test/out.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.3",
+    "@babel/preset-env": "^7.3.1",
+    "eslint": "^5.14.1",
+    "eslint-config-sprite": "^1.0.6",
+    "eslint-plugin-html": "^5.0.3"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.0.0"
+  }
+}
