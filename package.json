@@ -4,7 +4,8 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "test": "babel test/index.js -o test/out.js"
+    "compile": "babel test/vec2.js",
+    "test": "ava --serial"
   },
   "keywords": [],
   "author": "",
@@ -13,11 +14,19 @@
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.3.3",
     "@babel/preset-env": "^7.3.1",
+    "ava": "^1.2.1",
     "eslint": "^5.14.1",
     "eslint-config-sprite": "^1.0.6",
     "eslint-plugin-html": "^5.0.3"
   },
   "dependencies": {
     "gl-matrix": "^3.0.0"
+  },
+  "ava": {
+    "babel": {
+      "testOptions": {
+        "babelrc": true
+      }
+    }
   }
 }
