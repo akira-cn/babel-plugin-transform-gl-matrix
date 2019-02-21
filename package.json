@@ -1,5 +1,5 @@
 {
-  "name": "@babel/plugin-transform-gl-matrix",
+  "name": "babel-plugin-transform-gl-matrix",
   "version": "0.1.0",
   "description": "",
   "main": "src/index.js",
