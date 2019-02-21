@@ -28,7 +28,7 @@ const v = vec3.add(vec3.create(), v1, v2);
 const v = vec3(v1) + vec3(v2);
 ```
 
-_由于JavaScript是动态类型语言，所以我们需要在计算前指定变量的类型，所以要使用`vec3(v1) + vec3(v2)`而不能直接用`v1 + v2`。
+_由于JavaScript是动态类型语言，所以我们需要在计算前指定变量的类型，所以要使用`vec3(v1) + vec3(v2)`而不能直接用`v1 + v2`。_
 
 同样，求两个向量的外积：
 
