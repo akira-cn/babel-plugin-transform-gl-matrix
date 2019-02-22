@@ -30,7 +30,7 @@ With this plug-in, you can write as follows:
 const v = vec3(v1) + vec3(v2);
 ```
 
-_Because JavaScript is a dynamically typed language, we need to specify the type of variables while compiling (dynamic detection consumes performance), so we need to use `vec3 (v1) + vec3 (v2) ` instead of `v1 + v2`._
+_Because JavaScript is a dynamically typed language, we need to specify the type of variables while compiling (dynamic detection reduces performance), so we need to use `vec3 (v1) + vec3 (v2) ` instead of `v1 + v2`._
 
 Similarly, calculate the product of two vectors:
 
