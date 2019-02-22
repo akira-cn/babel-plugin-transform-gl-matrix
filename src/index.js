@@ -42,27 +42,15 @@ function getOperandMV(t, node) {
   return MVMap[name] ? name : null;
 }
 
-function createMV(t, name, initValue) {
-  if(initValue == null) {
-    return t.callExpression(
-      t.memberExpression(
-        t.identifier(name),
-        t.identifier('create'),
-        false,
-      ),
-      [],
-    );
-  }
-
+function createMV(t, name, initValue = 0) {
   const args = Array.from({length: MVMap[name]}).fill(t.numericLiteral(initValue));
-
   return t.callExpression(
     t.memberExpression(
-      t.identifier(name),
-      t.identifier('fromValues'),
+      t.identifier('GL_MATRIX_ARRAY_TYPE'),
+      t.identifier('of'),
       false,
     ),
-    args,
+    args
   );
 }
 
@@ -292,6 +280,28 @@ module.exports = function ({types: t}) {
               }
             },
           });
+
+          const body = path.get('body')[0];
+          if(body) {
+            body.insertBefore(t.variableDeclaration(
+              'var',
+              [t.variableDeclarator(
+                t.identifier('GL_MATRIX_ARRAY_TYPE'),
+                t.conditionalExpression(
+                  t.binaryExpression(
+                    '!==',
+                    t.unaryExpression(
+                      'typeof',
+                      t.identifier('Float32Array'),
+                    ),
+                    t.stringLiteral('undefined'),
+                  ),
+                  t.identifier('Float32Array'),
+                  t.identifier('Array'),
+                ),
+              )],
+            ));
+          }
         },
       },
     },
