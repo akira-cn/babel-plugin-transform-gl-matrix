@@ -10,6 +10,8 @@ const MVMap = {
   mat2d: 6,
   mat3: 9,
   mat4: 16,
+  quat: 4,
+  quat2: 8,
 };
 
 function isMV(name) {
@@ -96,13 +98,13 @@ module.exports = function ({types: t}) {
               if(operator === '*') {
                 if(isVec(left) && isVec(right)) {
                   op = 'cross';
-                } else if(isMat(left) && isMat(right)) {
-                  op = 'multiply';
-                } else if(isMat(left)) {
+                } else if(isMat(left) && isVec(right)) {
                   [left, right] = [right, left];
                   op = `transform${right.slice(0, 1).toUpperCase() + right.slice(1)}`;
-                } else {
+                } else if(isVec(left) && isMat(right)) {
                   op = `transform${right.slice(0, 1).toUpperCase() + right.slice(1)}`;
+                } else {
+                  op = 'multiply';
                 }
               } else if(operator === '+') {
                 op = 'add';

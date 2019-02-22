@@ -1,6 +1,6 @@
 const test = require('ava');
 const glMatrix = require('gl-matrix');
-const {vec2, mat2} = glMatrix;
+const {vec2, mat2, mat2d, mat3, mat4} = glMatrix;
 
 test('create', (t) => {
   const v1 = vec2(1.0, 1.0),
@@ -67,8 +67,25 @@ test('scale', (t) => {
 test('transform', (t) => {
   const v1 = vec2(1, 1);
   const m1 = mat2(1, 0, 0, 1);
-
   t.deepEqual(v1, vec2(v1) * mat2(m1));
+
+  const m2 = mat2(2, 0, 0, 2);
+  t.deepEqual(vec2(v1) * 2, vec2(v1) * mat2(m2));
+
+  const m3 = mat2d(1, 0, 0, 1, 0, 0);
+  t.deepEqual(v1, vec2(v1) * mat2d(m3));
+
+  const m4 = mat2d(2, 0, 0, 2, 0, 0);
+  t.deepEqual(vec2(v1) * 2, vec2(v1) * mat2d(m4));
+
+  const m5 = mat3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+  t.deepEqual(v1, vec2(v1) * mat3(m5));
+
+  const m6 = mat3(1, 2, 3, 4, 5, 6);
+  t.deepEqual(vec2(v1) * mat3(m6), vec2.transformMat3(vec2.create(), v1, m6));
+
+  const m7 = mat4(1, 2, 3, 4, 5, 6, 7, 8);
+  t.deepEqual(vec2(v1) * mat4(m7), vec2.transformMat4(vec2.create(), v1, m7));
 });
 
 test('+=, -=, *=', (t) => {
@@ -79,4 +96,12 @@ test('+=, -=, *=', (t) => {
 
   t.is(v1, v2);
   t.deepEqual(v1, vec2(2, 2));
+
+  let v3 = vec2(3, 4);
+  const v4 = v3;
+
+  v3 *= vec2(2, 2);
+
+  t.is(v3, v4);
+  t.deepEqual(v3, vec2.cross(vec2.create(), vec2.fromValues(3, 4), vec2.fromValues(2, 2)));
 });

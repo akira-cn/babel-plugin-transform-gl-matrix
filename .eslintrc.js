@@ -4,7 +4,7 @@ module.exports = {
   extends:  "eslint-config-sprite",
   plugins: ['html'],
   rules: {
-    "complexity": ["warn", 25],
+    // "complexity": ["warn", 25],
     'import/prefer-default-export': 'off',
   },
 }
