@@ -1,6 +1,6 @@
 const glMatrix = require('gl-matrix');
 
-// const {vec2, vec3, vec4, mat2, mat2d, mat3, mat4} = glMatrix;
+const RetMap = require('./retmap');
 
 const MVMap = {
   vec2: 2,
@@ -29,6 +29,16 @@ function isVec(name) {
 function getOperandMV(t, node) {
   if(!t.isCallExpression(node)) return false;
   const name = node.callee.name || node.callee.object && node.callee.object.name;
+  if(node.callee.object) {
+    const key = `${node.callee.object.name}.${node.callee.property.name}`;
+    const name = RetMap[key];
+    if(name && MVMap[name]) {
+      return name;
+    }
+    if(name) {
+      return null;
+    }
+  }
   return MVMap[name] ? name : null;
 }
 
@@ -112,13 +122,17 @@ module.exports = function ({types: t}) {
                 op = 'subtract';
               }
               if(op) {
+                let creator = createMV(t, left);
+                if(op === 'cross' && left === 'vec2') {
+                  creator = createMV(t, 'vec3');
+                }
                 const node = t.callExpression(
                   t.memberExpression(
                     t.identifier(left),
                     t.identifier(op),
                     false,
                   ),
-                  [createMV(t, left), clean(t, path.node.left), clean(t, path.node.right)],
+                  [creator, clean(t, path.node.left), clean(t, path.node.right)],
                 );
                 path.replaceWith(node);
               }
@@ -252,11 +266,14 @@ module.exports = function ({types: t}) {
               path.replaceWith(node);
             }
           } else if(getOperandMV(t, path.node)) {
-            const name = path.node.callee.object.name;
+            let name = path.node.callee.object.name;
             const property = path.node.callee.property.name;
             if(property !== 'fromValues' && property !== 'create') {
               const func = glMatrix[name][property];
               if(func && func.length > path.node.arguments.length) {
+                if(name === 'vec2' && property === 'cross') {
+                  name = 'vec3';
+                }
                 path.node.arguments.unshift(createMV(t, name));
               }
             }

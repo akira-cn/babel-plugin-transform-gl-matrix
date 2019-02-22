@@ -69,6 +69,19 @@ test('cross', (t) => {
   const v = vec2(v1) * vec2(v2);
 
   t.deepEqual(v, vec2.cross(v1, v2));
+
+  t.deepEqual(v, vec3(0, 0, -2));
+
+  t.deepEqual(vec2(v1) * vec2(v2) + 1, vec3(1, 1, -1));
+});
+
+test('dot', (t) => {
+  const v1 = vec2(1, 2);
+  const v2 = vec2(3, 4);
+
+  t.is(vec2.dot(v1, v2), 11);
+
+  t.is(vec2.dot(v1, v2) + 1, 12);
 });
 
 test('multiply', (t) => {
