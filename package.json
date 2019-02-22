@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "compile": "babel test/vec2.js",
+    "compile": "babel test/index.js",
     "test": "ava --serial"
   },
   "keywords": [],

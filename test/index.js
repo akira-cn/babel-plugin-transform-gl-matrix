@@ -1,12 +1,33 @@
 const test = require('ava');
 const glMatrix = require('gl-matrix');
-const {vec2, mat2, mat2d, mat3, mat4} = glMatrix;
+const {vec2, vec3, mat2, mat2d, mat3, mat4, quat, quat2} = glMatrix;
 
-test('create', (t) => {
+test('create vec2', (t) => {
   const v1 = vec2(1.0, 1.0),
     v2 = vec2.fromValues(1.0, 1.0);
 
   t.deepEqual(v1, v2);
+});
+
+test('create vec3', (t) => {
+  const v1 = vec3(1.0, 1.0, 1.0),
+    v2 = vec3.fromValues(1.0, 1.0, 1.0);
+
+  t.deepEqual(v1, v2);
+
+  const v3 = vec2(1.0, 1.0),
+    v4 = vec3(vec2(v3), 1.0);
+
+  t.deepEqual(v1, v4);
+});
+
+
+test('create mat3', (t) => {
+  const m1 = 2 * mat3(1, 0, 0, 0, 1, 0, 0, 0, 1),
+    m2 = mat3(1, 0, 0, 0, 1, 0, 0, 0, 1) * 2;
+
+  t.deepEqual(m1, mat3(2, 0, 0, 0, 2, 0, 0, 0, 1));
+  t.deepEqual(m1, m2);
 });
 
 test('eq', (t) => {
@@ -48,6 +69,23 @@ test('cross', (t) => {
   const v = vec2(v1) * vec2(v2);
 
   t.deepEqual(v, vec2.cross(v1, v2));
+});
+
+test('multiply', (t) => {
+  const m1 = mat2d(1, 0, 0, 1, 0, 0);
+  const m2 = mat2d(1, 2, 3, 4, 5, 6);
+
+  t.deepEqual(mat2d(m1) * mat2d(m2), mat2d.multiply(mat2d.create(), m1, m2));
+
+  const q1 = quat(1, 2, 3, 4);
+  const q2 = quat(5, 6, 7, 8);
+
+  t.deepEqual(quat(q1) * quat(q2), quat.multiply(quat.create(), q1, q2));
+
+  const q3 = quat2(1, 2, 3, 4, 5, 6, 7, 8);
+  const q4 = quat2(1, 0, 3, 5, 9, 8, 6, 4);
+
+  t.deepEqual(quat2(q3) * quat2(q4), quat2.multiply(quat2.create(), q3, q4));
 });
 
 test('scale', (t) => {

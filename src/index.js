@@ -159,6 +159,11 @@ module.exports = function ({types: t}) {
 
             if(operator === '*') {
               op = 'scale';
+              if(left === 'mat2' || left === 'mat2d' || left === 'mat3') {
+                operand = createMV(t, 'vec2', operand.value);
+              } else if(left === 'mat4') {
+                operand = createMV(t, 'vec3', operand.value);
+              }
             } else if(operator === '+') {
               op = 'add';
               operand = createMV(t, left, path.node.left.value);
