@@ -65,5 +65,5 @@ const v = vec3.transformMat3(vec3.create(), v1, m1); // original
 const v1 = vec3(1, 2, 3);
 const m1 = mat3(2, 0, 0, 0, 2, 0, 0, 0, 2);
 
-const v = vec3(v1) * mat3(m1); // with plugin
+const v = mat3(m1) * vec3(v1); // with plugin
 ```

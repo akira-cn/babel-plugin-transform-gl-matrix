@@ -118,25 +118,27 @@ test('scale', (t) => {
 test('transform', (t) => {
   const v1 = vec2(1, 1);
   const m1 = mat2(1, 0, 0, 1);
-  t.deepEqual(v1, vec2(v1) * mat2(m1));
+  t.deepEqual(v1, mat2(m1) * vec2(v1));
 
   const m2 = mat2(2, 0, 0, 2);
-  t.deepEqual(vec2(v1) * 2, vec2(v1) * mat2(m2));
+  t.deepEqual(vec2(v1) * 2, mat2(m2) * vec2(v1));
 
   const m3 = mat2d(1, 0, 0, 1, 0, 0);
-  t.deepEqual(v1, vec2(v1) * mat2d(m3));
+  t.deepEqual(v1, mat2d(m3) * vec2(v1));
 
   const m4 = mat2d(2, 0, 0, 2, 0, 0);
-  t.deepEqual(vec2(v1) * 2, vec2(v1) * mat2d(m4));
+  t.deepEqual(vec2(v1) * 2, mat2d(m4) * vec2(v1));
 
   const m5 = mat3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-  t.deepEqual(v1, vec2(v1) * mat3(m5));
+  t.deepEqual(v1, mat3(m5) * vec2(v1));
 
   const m6 = mat3(1, 2, 3, 4, 5, 6);
-  t.deepEqual(vec2(v1) * mat3(m6), vec2.transformMat3(vec2.create(), v1, m6));
+  t.deepEqual(mat3(m6) * vec2(v1), vec2.transformMat3(vec2.create(), v1, m6));
 
   const m7 = mat4(1, 2, 3, 4, 5, 6, 7, 8);
-  t.deepEqual(vec2(v1) * mat4(m7), vec2.transformMat4(vec2.create(), v1, m7));
+  t.deepEqual(mat4(m7) * vec2(v1), vec2.transformMat4(vec2.create(), v1, m7));
+
+  t.deepEqual(vec2(v1) * mat4(m7), vec2.transformMat4(vec2.create(), v1, mat4.transpose(mat4.create(), m7)));
 });
 
 test('+=, -=, *=', (t) => {
