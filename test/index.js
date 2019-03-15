@@ -2,6 +2,14 @@ const test = require('ava');
 const glMatrix = require('gl-matrix');
 const {vec2, vec3, mat2, mat2d, mat3, mat4, quat, quat2} = glMatrix;
 
+test('mat2d expand', (t) => {
+  const arr = [1, 2, 3, 4, 5, 6];
+  const m1 = mat2d(...arr);
+  const m2 = mat2d.fromValues(...arr);
+
+  t.deepEqual(m1, m2);
+});
+
 test('create vec2', (t) => {
   const v1 = vec2(1.0, 1.0),
     v2 = vec2.fromValues(1.0, 1.0);
@@ -20,7 +28,6 @@ test('create vec3', (t) => {
 
   t.deepEqual(v1, v4);
 });
-
 
 test('create mat3', (t) => {
   const m1 = 2 * mat3(1, 0, 0, 0, 1, 0, 0, 0, 1),

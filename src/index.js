@@ -255,7 +255,7 @@ module.exports = function ({types: t}) {
               return arg;
             });
 
-            if(args.length > 1) {
+            if(args.length > 1 || t.isSpreadElement(args[0])) {
               const node = t.callExpression(
                 t.memberExpression(
                   t.identifier(funcName),
