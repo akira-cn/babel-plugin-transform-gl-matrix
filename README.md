@@ -67,3 +67,22 @@ const m1 = mat3(2, 0, 0, 0, 2, 0, 0, 0, 2);
 
 const v = mat3(m1) * vec3(v1); // with plugin
 ```
+
+Comparative (version > 0.4)
+
+```js
+const v1 = vec3.fromValues(1, 2, 3);
+const v2 = vec3.fromValues(1, 2, 3);
+const v3 = vec3.fromValues(1, 1, 1);
+
+// original
+console.log(vec3.equals(v1, v2), vec3.equals(v1, v3)); // true false
+```
+
+```js
+const v1 = vec3.fromValues(1, 2, 3);
+const v2 = vec3.fromValues(1, 2, 3);
+const v3 = vec3.fromValues(1, 1, 1);
+
+console.log(vec3(v1) == v2, vec3(v1) != v3); // true, false
+```

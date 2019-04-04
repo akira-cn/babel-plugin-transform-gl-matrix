@@ -45,10 +45,42 @@ test('eq', (t) => {
   t.is(v2, vec2(v2));
 });
 
+test('equals', (t) => {
+  const v1 = vec2(1, 0);
+  const v2 = vec2(1, 0);
+
+  t.truthy(vec2(v1) == vec2(v2)); // eslint-disable-line eqeqeq
+  t.truthy(vec2(v1) == vec2(1, 0)); // eslint-disable-line eqeqeq
+  t.truthy(vec2(1, 0) == vec2(v2)); // eslint-disable-line eqeqeq
+  t.truthy([1, 0] == vec2(v2)); // eslint-disable-line eqeqeq
+  t.truthy(vec2(v1) == [1, 0]); // eslint-disable-line eqeqeq
+  t.truthy(vec2.equals(v1, v2));
+});
+
+test('not equals', (t) => {
+  const v1 = vec2(1, 0);
+  const v2 = vec2(1, 0);
+
+  t.falsy(vec2(v1) != vec2(v2)); // eslint-disable-line eqeqeq
+  t.truthy(vec2(v1) != [2, 0]); // eslint-disable-line eqeqeq
+  t.truthy([2, 0] != vec2(v2)); // eslint-disable-line eqeqeq
+  t.truthy(vec2(v1) != vec2(2, 0)); // eslint-disable-line eqeqeq
+  t.truthy(vec2(2, 0) != vec2(v2)); // eslint-disable-line eqeqeq
+});
+
+test('eq ne 2', (t) => {
+  const v1 = vec3.fromValues(1, 2, 3);
+  const v2 = vec3.fromValues(1, 2, 3);
+  const v3 = vec3.fromValues(1, 1, 1);
+
+  t.deepEqual([vec3(v1) == v2, vec3(v1) != v3], [true, true]); // eslint-disable-line eqeqeq
+});
+
 test('add1', (t) => {
   const v1 = vec2(1.0, 1.0);
 
   t.deepEqual(vec2(v1) + 1, vec2(2.0, 2.0));
+  t.deepEqual(vec2(v1) + [1, 1], vec2(2.0, 2.0));
 });
 
 test('add2', (t) => {
@@ -67,6 +99,12 @@ test('sub2', (t) => {
   const v = vec2(1, 0) - (vec2(0, 1) + vec2(1, 1));
 
   t.deepEqual(v, vec2(0, -2));
+});
+
+test('sub3', (t) => {
+  const v = vec2(1, 0);
+
+  t.deepEqual(1 - vec2(v), vec2(0, 1));
 });
 
 test('cross', (t) => {
@@ -139,11 +177,13 @@ test('transform', (t) => {
   const m5 = mat3(1, 0, 0, 0, 1, 0, 0, 0, 1);
   t.deepEqual(v1, mat3(m5) * vec2(v1));
 
-  const m6 = mat3(1, 2, 3, 4, 5, 6);
+  const m6 = mat3(1, 2, 3, 4, 5, 6, 7, 8, 9);
   t.deepEqual(mat3(m6) * vec2(v1), vec2.transformMat3(vec2.create(), v1, m6));
 
-  const m7 = mat4(1, 2, 3, 4, 5, 6, 7, 8);
+  const m7 = mat4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
   t.deepEqual(mat4(m7) * vec2(v1), vec2.transformMat4(vec2.create(), v1, m7));
+
+  t.deepEqual(mat4(m7) * [1, 1, 1], vec3.transformMat4(vec3.create(), vec3(...v1, 1), m7));
 
   t.deepEqual(vec2(v1) * mat4(m7), vec2.transformMat4(vec2.create(), v1, mat4.transpose(mat4.create(), m7)));
 });

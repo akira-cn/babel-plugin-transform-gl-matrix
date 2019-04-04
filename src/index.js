@@ -42,8 +42,13 @@ function getOperandMV(t, node) {
   return MVMap[name] ? name : null;
 }
 
-function createMV(t, name, initValue = 0) {
-  const args = Array.from({length: MVMap[name]}).fill(t.numericLiteral(initValue));
+function createMV(t, name, initObj = {value: 0}) {
+  let args;
+  if(initObj.value == null && t.isArrayExpression(initObj)) {
+    args = initObj.elements;
+  } else {
+    args = Array.from({length: MVMap[name]}).fill(t.numericLiteral(initObj.value));
+  }
   return t.callExpression(
     t.memberExpression(
       t.identifier('GL_MATRIX_ARRAY_TYPE'),
@@ -90,118 +95,97 @@ module.exports = function ({types: t}) {
           let left = getOperandMV(t, path.node.left);
           let right = getOperandMV(t, path.node.right);
 
-          if(left) {
-            if(right) {
-              let op;
-              let rightOperand = path.node.right,
-                leftOperand = path.node.left;
-
-              if(operator === '*') {
-                if(isVec(left) && isVec(right)) {
-                  op = 'cross';
-                } else if(isMat(left) && isVec(right)) {
-                  [left, right] = [right, left];
-                  [leftOperand, rightOperand] = [rightOperand, leftOperand];
-                  op = `transform${right.slice(0, 1).toUpperCase() + right.slice(1)}`;
-                } else if(isVec(left) && isMat(right)) {
-                  // vec * mat = transpose(mat) * vec
-                  op = `transform${right.slice(0, 1).toUpperCase() + right.slice(1)}`;
-                  rightOperand = t.callExpression(
-                    t.memberExpression(
-                      t.identifier(right),
-                      t.identifier('transpose'),
-                      false,
-                    ),
-                    [createMV(t, right), rightOperand]
-                  );
-                } else {
-                  op = 'multiply';
-                }
-              } else if(operator === '+') {
-                op = 'add';
-              } else if(operator === '-') {
-                op = 'subtract';
+          if(!left && right) {
+            if(t.isArrayExpression(path.node.left)) {
+              const elements = path.node.left.elements;
+              if(elements.length === 2) {
+                left = 'vec2';
+              } else if(elements.length === 3) {
+                left = 'vec3';
+              } else if(elements.length >= 4) {
+                left = 'vec4';
               }
-              if(op) {
-                let creator = createMV(t, left);
-                if(op === 'cross' && left === 'vec2') {
-                  creator = createMV(t, 'vec3');
-                }
-                const node = t.callExpression(
-                  t.memberExpression(
-                    t.identifier(left),
-                    t.identifier(op),
-                    false,
-                  ),
-                  [creator, clean(t, leftOperand), clean(t, rightOperand)],
-                );
-                path.replaceWith(node);
-              }
-            } else {
-              let op;
-              let operand = path.node.right;
-
-              if(operator === '*') {
-                op = 'scale';
-                if(left === 'mat2' || left === 'mat2d' || left === 'mat3') {
-                  operand = createMV(t, 'vec2', operand.value);
-                } else if(left === 'mat4') {
-                  operand = createMV(t, 'vec3', operand.value);
-                }
-              } else if(operator === '+') {
-                op = 'add';
-                operand = createMV(t, left, operand.value);
-              } else if(operator === '-') {
-                op = 'subtract';
-                operand = createMV(t, left, operand.value);
-              }
-              if(op) {
-                const node = t.callExpression(
-                  t.memberExpression(
-                    t.identifier(left),
-                    t.identifier(op),
-                    false,
-                  ),
-                  [createMV(t, left), clean(t, path.node.left), clean(t, operand)],
-                );
-                path.replaceWith(node);
-              }
+              path.node.left = createMV(t, left, path.node.left);
+            } else if(operator === '*' || operator === '==' || operator === '!=') {
+              [left, right] = [right, left];
+              [path.node.left, path.node.right] = [path.node.right, path.node.left];
+            } else if(operator === '+' || operator === '-') {
+              left = right;
+              path.node.left = createMV(t, left, path.node.left);
             }
-          } else if(right) {
-            [left, right] = [right, left];
-            let operand = path.node.left;
+          } else if(left && !right) {
+            if(t.isArrayExpression(path.node.right)) {
+              const elements = path.node.right.elements;
+              if(elements.length === 2) {
+                right = 'vec2';
+              } else if(elements.length === 3) {
+                right = 'vec3';
+              } else if(elements.length >= 4) {
+                right = 'vec4';
+              }
+              path.node.right = createMV(t, right, path.node.right);
+            } else if(operator === '+' || operator === '-') {
+              right = left;
+              path.node.right = createMV(t, right, path.node.right);
+            }
+          }
+
+          if(left) {
             let op;
+            let rightOperand = path.node.right,
+              leftOperand = path.node.left;
 
             if(operator === '*') {
-              op = 'scale';
-              if(left === 'mat2' || left === 'mat2d' || left === 'mat3') {
-                operand = createMV(t, 'vec2', operand.value);
-              } else if(left === 'mat4') {
-                operand = createMV(t, 'vec3', operand.value);
+              if(!right) {
+                op = 'scale';
+                if(left === 'mat2' || left === 'mat2d' || left === 'mat3') {
+                  rightOperand = createMV(t, 'vec2', rightOperand);
+                } else if(left === 'mat4') {
+                  rightOperand = createMV(t, 'vec3', rightOperand);
+                }
+              } else if(isVec(left) && isVec(right)) {
+                op = 'cross';
+              } else if(isMat(left) && isVec(right)) {
+                [left, right] = [right, left];
+                [leftOperand, rightOperand] = [rightOperand, leftOperand];
+                op = `transform${right.slice(0, 1).toUpperCase() + right.slice(1)}`;
+              } else if(isVec(left) && isMat(right)) {
+                // vec * mat = transpose(mat) * vec
+                op = `transform${right.slice(0, 1).toUpperCase() + right.slice(1)}`;
+                rightOperand = t.callExpression(
+                  t.memberExpression(
+                    t.identifier(right),
+                    t.identifier('transpose'),
+                    false,
+                  ),
+                  [createMV(t, right), rightOperand]
+                );
+              } else {
+                op = 'multiply';
               }
             } else if(operator === '+') {
               op = 'add';
-              operand = createMV(t, left, path.node.left.value);
             } else if(operator === '-') {
-              op = 'add';
-              operand = t.callExpression(
-                t.memberExpression(
-                  t.identifier(left),
-                  t.identifier('scale'),
-                  false,
-                ),
-                [createMV(t, left), clean(t, path.node.right), t.numericLiteral(-1)],
-              );
+              op = 'subtract';
+            } else if(operator === '==' || operator === '!=') {
+              op = 'equals';
             }
             if(op) {
-              const node = t.callExpression(
+              let creator = op === 'equals' ? [] : [createMV(t, left)];
+              if(op === 'cross' && left === 'vec2') {
+                creator = [createMV(t, 'vec3')];
+              }
+              let node = t.callExpression(
                 t.memberExpression(
                   t.identifier(left),
                   t.identifier(op),
                   false,
                 ),
-                [createMV(t, left), clean(t, path.node.right), operand],
+                [...creator, clean(t, leftOperand), clean(t, rightOperand)],
               );
+              if(operator === '!=') {
+                node = t.unaryExpression('!', node);
+              }
               path.replaceWith(node);
             }
           }
@@ -245,7 +229,14 @@ module.exports = function ({types: t}) {
       },
       CallExpression: {
         exit(path) {
-          const funcName = path.node.callee.name;
+          let funcName = path.node.callee.name;
+          let applyTag = false;
+          if(t.isMemberExpression(path.node.callee)) {
+            if(path.node.callee.property.name === 'apply') {
+              funcName = path.node.callee.object.name;
+              applyTag = true;
+            }
+          }
 
           if(isMV(funcName)) {
             const args = path.node.arguments.map((arg) => {
@@ -256,12 +247,21 @@ module.exports = function ({types: t}) {
             });
 
             if(args.length > 1 || t.isSpreadElement(args[0])) {
-              const node = t.callExpression(
-                t.memberExpression(
-                  t.identifier(funcName),
-                  t.identifier('fromValues'),
+              let node = t.memberExpression(
+                t.identifier(funcName),
+                t.identifier('fromValues'),
+                false,
+              );
+              if(applyTag) {
+                node = t.memberExpression(
+                  node,
+                  t.identifier('apply'),
                   false,
-                ),
+                );
+                args[0] = t.identifier(funcName);
+              }
+              node = t.callExpression(
+                node,
                 args
               );
               path.replaceWith(node);
