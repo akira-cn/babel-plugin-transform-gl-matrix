@@ -84,5 +84,6 @@ const v1 = vec3.fromValues(1, 2, 3);
 const v2 = vec3.fromValues(1, 2, 3);
 const v3 = vec3.fromValues(1, 1, 1);
 
+// with plugin
 console.log(vec3(v1) == v2, vec3(v1) != v3); // true, true
 ```
