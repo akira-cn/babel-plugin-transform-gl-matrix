@@ -86,3 +86,34 @@ const v3 = vec3.fromValues(1, 1, 1);
 
 console.log(vec3(v1) == v2, vec3(v1) != v3); // true, false
 ```
+
+## Usage
+
+.babelrc
+
+```json
+{
+  "presets": [
+    ["@babel/preset-env",
+      {
+        "targets": {
+          "browsers": [
+            "> 1%",
+            "last 2 versions",
+            "not ie <= 8"
+          ]
+        }
+      }
+    ]
+  ],
+  "plugins": [
+    ["./src/index.js", {
+      "glMatrixArray": false
+    }]
+  ]
+}
+```
+
+If you set `glMatrixArray: false`，the plugin will use Array as glMatrix.ARRAY_TYPE instead of Float32Array.
+
+See issue [359](https://github.com/toji/gl-matrix/issues/359).

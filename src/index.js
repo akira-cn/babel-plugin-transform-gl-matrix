@@ -42,6 +42,8 @@ function getOperandMV(t, node) {
   return MVMap[name] ? name : null;
 }
 
+let arrayIdentifier = 'GL_MATRIX_ARRAY_TYPE';
+
 function createMV(t, name, initObj = {value: 0}) {
   let args;
   if(initObj.value == null && t.isArrayExpression(initObj)) {
@@ -51,7 +53,7 @@ function createMV(t, name, initObj = {value: 0}) {
   }
   return t.callExpression(
     t.memberExpression(
-      t.identifier('GL_MATRIX_ARRAY_TYPE'),
+      t.identifier(arrayIdentifier),
       t.identifier('of'),
       false,
     ),
@@ -283,7 +285,12 @@ module.exports = function ({types: t}) {
         },
       },
       Program: {
-        exit(path) {
+        enter(path, state) {
+          if(state.opts && state.opts.glMatrixArray === false) {
+            arrayIdentifier = 'Array';
+          }
+        },
+        exit(path, state) {
           path.traverse({
             CallExpression(p) {
               const funcName = p.node.callee.name;
@@ -296,24 +303,42 @@ module.exports = function ({types: t}) {
 
           const body = path.get('body')[0];
           if(body) {
-            body.insertBefore(t.variableDeclaration(
-              'var',
-              [t.variableDeclarator(
-                t.identifier('GL_MATRIX_ARRAY_TYPE'),
-                t.conditionalExpression(
-                  t.binaryExpression(
-                    '!==',
-                    t.unaryExpression(
-                      'typeof',
-                      t.identifier('Float32Array'),
+            if(arrayIdentifier === 'GL_MATRIX_ARRAY_TYPE') {
+              body.insertBefore(t.variableDeclaration(
+                'var',
+                [t.variableDeclarator(
+                  t.identifier('GL_MATRIX_ARRAY_TYPE'),
+                  t.conditionalExpression(
+                    t.binaryExpression(
+                      '!==',
+                      t.unaryExpression(
+                        'typeof',
+                        t.identifier('Float32Array'),
+                      ),
+                      t.stringLiteral('undefined'),
                     ),
-                    t.stringLiteral('undefined'),
+                    t.identifier('Float32Array'),
+                    t.identifier('Array'),
                   ),
-                  t.identifier('Float32Array'),
-                  t.identifier('Array'),
-                ),
-              )],
-            ));
+                )],
+              ));
+            } else {
+              body.insertBefore(t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(
+                    t.memberExpression(
+                      t.callExpression(
+                        t.identifier('require'),
+                        [t.stringLiteral('gl-matrix')]
+                      ),
+                      t.identifier('glMatrix')
+                    ),
+                    t.identifier('setMatrixArrayType')
+                  ),
+                  [t.identifier('Array')],
+                )
+              ));
+            }
           }
         },
       },

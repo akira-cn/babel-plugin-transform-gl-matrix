@@ -1,6 +1,5 @@
+import {vec2, vec3, mat2, mat2d, mat3, mat4, quat, quat2} from 'gl-matrix';
 const test = require('ava');
-const glMatrix = require('gl-matrix');
-const {vec2, vec3, mat2, mat2d, mat3, mat4, quat, quat2} = glMatrix;
 
 test('mat2d expand', (t) => {
   const arr = [1, 2, 3, 4, 5, 6];
