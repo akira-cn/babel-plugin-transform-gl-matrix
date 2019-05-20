@@ -16,8 +16,8 @@ const MVMap = {
 
 function isMV(name, path) {
   if(MVMap[name]) {
-    const bindings = path.scope.getBinding(name);
-    return bindings && bindings.kind === 'module';
+    const binding = path.scope.getBinding(name);
+    return binding && binding.kind === 'module';
   }
   return false;
 }
@@ -37,16 +37,16 @@ function getOperandMV(t, node, path) {
     const key = `${node.callee.object.name}.${node.callee.property.name}`;
     const name = RetMap[key];
     if(name && MVMap[name]) {
-      const bindings = path.scope.getBinding(name);
-      return bindings && bindings.kind === 'module' ? name : null;
+      const binding = path.scope.getBinding(name);
+      return binding && binding.kind === 'module' ? name : null;
     }
     if(name) {
       return null;
     }
   }
   if(MVMap[name]) {
-    const bindings = path.scope.getBinding(name);
-    return bindings && bindings.kind === 'module' ? name : null;
+    const binding = path.scope.getBinding(name);
+    return binding && binding.kind === 'module' ? name : null;
   }
   return null;
 }
