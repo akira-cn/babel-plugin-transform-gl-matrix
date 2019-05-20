@@ -107,7 +107,7 @@ console.log(vec3(v1) == v2, vec3(v1) != v3); // true, true
     ]
   ],
   "plugins": [
-    ["./src/index.js", {
+    ["transform-gl-matrix", {
       "glMatrixArray": false
     }]
   ]
