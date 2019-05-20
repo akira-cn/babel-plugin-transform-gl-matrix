@@ -204,3 +204,12 @@ test('+=, -=, *=', (t) => {
   t.is(v3, v4);
   t.deepEqual(v3, vec2.cross(vec2.create(), vec2.fromValues(3, 4), vec2.fromValues(2, 2)));
 });
+
+test('scope', (t) => {
+  const mat2d = {
+    add(a, b) {
+      return a + b;
+    },
+  };
+  t.is(mat2d.add(1, 2), 3);
+});

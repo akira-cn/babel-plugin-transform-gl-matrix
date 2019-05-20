@@ -14,8 +14,12 @@ const MVMap = {
   quat2: 8,
 };
 
-function isMV(name) {
-  return !!MVMap[name];
+function isMV(name, path) {
+  if(MVMap[name]) {
+    const bindings = path.scope.getBinding(name);
+    return bindings && bindings.kind === 'module';
+  }
+  return false;
 }
 
 function isMat(name) {
@@ -26,20 +30,25 @@ function isVec(name) {
   return name.startsWith('vec');
 }
 
-function getOperandMV(t, node) {
+function getOperandMV(t, node, path) {
   if(!t.isCallExpression(node)) return false;
   const name = node.callee.name || node.callee.object && node.callee.object.name;
   if(node.callee.object) {
     const key = `${node.callee.object.name}.${node.callee.property.name}`;
     const name = RetMap[key];
     if(name && MVMap[name]) {
-      return name;
+      const bindings = path.scope.getBinding(name);
+      return bindings && bindings.kind === 'module' ? name : null;
     }
     if(name) {
       return null;
     }
   }
-  return MVMap[name] ? name : null;
+  if(MVMap[name]) {
+    const bindings = path.scope.getBinding(name);
+    return bindings && bindings.kind === 'module' ? name : null;
+  }
+  return null;
 }
 
 let arrayIdentifier = 'GL_MATRIX_ARRAY_TYPE';
@@ -74,7 +83,7 @@ module.exports = function ({types: t}) {
       UnaryExpression: {
         exit(path) {
           const operator = path.node.operator;
-          const operand = getOperandMV(t, path.node.argument);
+          const operand = getOperandMV(t, path.node.argument, path);
 
           if(operator === '-' && operand) {
             const node = t.callExpression(
@@ -94,8 +103,8 @@ module.exports = function ({types: t}) {
         exit(path) {
           const operator = path.node.operator;
 
-          let left = getOperandMV(t, path.node.left);
-          let right = getOperandMV(t, path.node.right);
+          let left = getOperandMV(t, path.node.left, path);
+          let right = getOperandMV(t, path.node.right, path);
 
           if(!left && right) {
             if(t.isArrayExpression(path.node.left)) {
@@ -195,7 +204,7 @@ module.exports = function ({types: t}) {
       },
       AssignmentExpression: {
         exit(path) {
-          const right = getOperandMV(t, path.node.right);
+          const right = getOperandMV(t, path.node.right, path);
           const operator = path.node.operator;
 
           if(right) {
@@ -240,9 +249,9 @@ module.exports = function ({types: t}) {
             }
           }
 
-          if(isMV(funcName)) {
+          if(isMV(funcName, path)) {
             const args = path.node.arguments.map((arg) => {
-              if(getOperandMV(t, arg)) {
+              if(getOperandMV(t, arg, path)) {
                 return t.spreadElement(clean(t, arg));
               }
               return arg;
@@ -268,7 +277,7 @@ module.exports = function ({types: t}) {
               );
               path.replaceWith(node);
             }
-          } else if(getOperandMV(t, path.node)) {
+          } else if(getOperandMV(t, path.node, path)) {
             let name = path.node.callee.object.name;
             const property = path.node.callee.property.name;
             if(property !== 'fromValues' && property !== 'create') {
@@ -295,7 +304,7 @@ module.exports = function ({types: t}) {
             CallExpression(p) {
               const funcName = p.node.callee.name;
 
-              if(isMV(funcName) && p.node.arguments.length === 1) {
+              if(isMV(funcName, p) && p.node.arguments.length === 1) {
                 p.replaceWith(clean(t, p.node));
               }
             },
