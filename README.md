@@ -42,6 +42,8 @@ const v = vec3.multiply(vec3.create(), v1, v2); // original
 const v = vec3(v1) * vec3(v2); // with plugin
 ```
 
+**NOTE: `vec3(v1) * vec3(v2)` is `vec3.multiply(v1, v2)` now, while `vec3(v1) * vec3(v2)` is `vec3.cross(v1, v2)` before v0.6. Modify this rule to be consistent with [glsl](https://en.wikibooks.org/wiki/GLSL_Programming/Vector_and_Matrix_Operations).**
+
 Multiplication of scalars and vectors:
 
 ```js
