@@ -154,8 +154,6 @@ module.exports = function ({types: t}) {
                 } else if(left === 'mat4') {
                   rightOperand = createMV(t, 'vec3', rightOperand);
                 }
-              } else if(isVec(left) && isVec(right)) {
-                op = 'cross';
               } else if(isMat(left) && isVec(right)) {
                 [left, right] = [right, left];
                 [leftOperand, rightOperand] = [rightOperand, leftOperand];
@@ -182,10 +180,7 @@ module.exports = function ({types: t}) {
               op = 'equals';
             }
             if(op) {
-              let creator = op === 'equals' ? [] : [createMV(t, left)];
-              if(op === 'cross' && left === 'vec2') {
-                creator = [createMV(t, 'vec3')];
-              }
+              const creator = op === 'equals' ? [] : [createMV(t, left)];
               let node = t.callExpression(
                 t.memberExpression(
                   t.identifier(left),
@@ -210,11 +205,7 @@ module.exports = function ({types: t}) {
           if(right) {
             let op;
             if(operator === '*=') {
-              if(isVec(right)) {
-                op = 'cross';
-              } else {
-                op = 'multiply';
-              }
+              op = 'multiply';
             } else if(operator === '+=') {
               op = 'add';
             } else if(operator === '-=') {

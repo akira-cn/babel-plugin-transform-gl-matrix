@@ -32,10 +32,10 @@ const v = vec3(v1) + vec3(v2);
 
 _Because JavaScript is a dynamically typed language, we need to specify the type of variables while compiling (dynamic detection reduces performance), so we need to use `vec3 (v1) + vec3 (v2) ` instead of `v1 + v2`._
 
-Similarly, calculate the product of two vectors:
+Similarly, calculate the multiplication of two vectors:
 
 ```js
-const v = vec3.cross(vec3.create(), v1, v2); // original
+const v = vec3.multiply(vec3.create(), v1, v2); // original
 ```
 
 ```js

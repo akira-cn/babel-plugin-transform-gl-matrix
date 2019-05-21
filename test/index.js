@@ -106,17 +106,26 @@ test('sub3', (t) => {
   t.deepEqual(1 - vec2(v), vec2(0, 1));
 });
 
-test('cross', (t) => {
+test('vec multiply', (t) => {
   const v1 = vec2(1, 2);
   const v2 = vec2(3, 4);
 
   const v = vec2(v1) * vec2(v2);
 
-  t.deepEqual(v, vec2.cross(v1, v2));
+  t.deepEqual(v, vec2.multiply(v1, v2));
+
+  t.deepEqual(v, vec2(3, 8));
+
+  t.deepEqual(vec2(v1) * vec2(v2) + 1, vec2(4, 9));
+});
+
+test('vec cross', (t) => {
+  const v1 = vec2(1, 2);
+  const v2 = vec2(3, 4);
+
+  const v = vec2.cross(v1, v2);
 
   t.deepEqual(v, vec3(0, 0, -2));
-
-  t.deepEqual(vec2(v1) * vec2(v2) + 1, vec3(1, 1, -1));
 });
 
 test('dot', (t) => {
@@ -202,7 +211,7 @@ test('+=, -=, *=', (t) => {
   v3 *= vec2(2, 2);
 
   t.is(v3, v4);
-  t.deepEqual(v3, vec2.cross(vec2.create(), vec2.fromValues(3, 4), vec2.fromValues(2, 2)));
+  t.deepEqual(v3, vec2.multiply(vec2.create(), vec2.fromValues(3, 4), vec2.fromValues(2, 2)));
 });
 
 test('scope', (t) => {
