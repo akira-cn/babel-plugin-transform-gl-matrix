@@ -99,6 +99,8 @@ const v1 = vec3(1, 2, 3);
 const v2 = v1.xy; // with plugin
 ```
 
+**注意：所有第一个参数为out的方法，使用插件都不应写out而是直接赋值。**
+
 ## 使用方式
 
 配置 .babelrc
