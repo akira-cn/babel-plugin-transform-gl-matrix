@@ -21,16 +21,18 @@ const v = vec3(1, 0, 0);
 To add the two vectors together, the native API looks like this:
 
 ```js
+const v1 = vec3.fromValues(1, 0, 0);
+const v2 = vec3.fromValues(0, 1, 0);
 const v = vec3.add(vec3.create(), v1, v2);
 ```
 
 With this plug-in, you can write as follows:
 
 ```js
-const v = vec3(v1) + vec3(v2);
+const v1 = vec3(1, 0, 0);
+const v2 = vec3(0, 1, 0);
+const v = v1 + v2;
 ```
-
-_Because JavaScript is a dynamically typed language, we need to specify the type of variables while compiling (dynamic detection reduces performance), so we need to use `vec3 (v1) + vec3 (v2) ` instead of `v1 + v2`._
 
 Similarly, calculate the multiplication of two vectors:
 
@@ -39,10 +41,8 @@ const v = vec3.multiply(vec3.create(), v1, v2); // original
 ```
 
 ```js
-const v = vec3(v1) * vec3(v2); // with plugin
+const v = v1 * v2; // with plugin
 ```
-
-**NOTE: `vec3(v1) * vec3(v2)` is `vec3.multiply(v1, v2)` now, while `vec3(v1) * vec3(v2)` is `vec3.cross(v1, v2)` before v0.6. Modify this rule to be consistent with [glsl](https://en.wikibooks.org/wiki/GLSL_Programming/Vector_and_Matrix_Operations).**
 
 Multiplication of scalars and vectors:
 
@@ -51,7 +51,7 @@ const v = vec3.scale(vec3.create(), v1, n); // original
 ```
 
 ```js
-const v = vec3(v1) * n; // with plugin
+const v = v1 * n; // with plugin
 ```
 
 Matrix transformation of vectors:
@@ -67,7 +67,7 @@ const v = vec3.transformMat3(vec3.create(), v1, m1); // original
 const v1 = vec3(1, 2, 3);
 const m1 = mat3(2, 0, 0, 0, 2, 0, 0, 0, 2);
 
-const v = mat3(m1) * vec3(v1); // with plugin
+const v = m1 * v1; // with plugin
 ```
 
 Comparative (version > 0.4)
@@ -82,11 +82,25 @@ console.log(vec3.equals(v1, v2), vec3.equals(v1, v3)); // true false
 ```
 
 ```js
-const v1 = vec3.fromValues(1, 2, 3);
-const v2 = vec3.fromValues(1, 2, 3);
-const v3 = vec3.fromValues(1, 1, 1);
+const v1 = vec3(1, 2, 3);
+const v2 = vec3(1, 2, 3);
+const v3 = vec3(1, 1, 1);
 
-console.log(vec3(v1) == v2, vec3(v1) != v3); // true, true
+console.log(v1 == v2, v1 != v3); // true, true
+```
+
+Vector Components (version > 1.0)
+
+Supports xyzw, rgba, stpq, the same as glsl.
+
+```js
+const v1 = vec3.fromValues(1, 2, 3);
+const v2 = vec2.fromValues(v1[0], v1[1]);
+```
+
+```js
+const v1 = vec3(1, 2, 3);
+const v2 = v1.xy; // with plugin
 ```
 
 ## Usage
@@ -97,25 +111,14 @@ console.log(vec3(v1) == v2, vec3(v1) != v3); // true, true
 {
   "presets": [
     ["@babel/preset-env",
-      {
-        "targets": {
-          "browsers": [
-            "> 1%",
-            "last 2 versions",
-            "not ie <= 8"
-          ]
-        }
+    {
+      "targets": {
+        "node": "current"
       }
-    ]
+    }]
   ],
   "plugins": [
-    ["transform-gl-matrix", {
-      "glMatrixArray": false
-    }]
+    "./src/index.js"
   ]
 }
 ```
-
-If you set `glMatrixArray: false`，the plugin will use Array as glMatrix.ARRAY_TYPE instead of Float32Array.
-
-See issue [359](https://github.com/toji/gl-matrix/issues/359).
