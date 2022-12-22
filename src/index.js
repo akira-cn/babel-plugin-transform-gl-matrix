@@ -1,347 +1,334 @@
-const glMatrix = require('gl-matrix');
+import {
+  getOperandType, makeCreate, fromScalarValues, spreadArgs,
+  makeBinaryExpression,
+} from './utils.js';
+import retmap from './retmap.js';
 
-const RetMap = require('./retmap');
-
-const MVMap = {
-  vec2: 2,
-  vec3: 3,
-  vec4: 4,
-  mat2: 4,
-  mat2d: 6,
-  mat3: 9,
-  mat4: 16,
-  quat: 4,
-  quat2: 8,
-};
-
-function isMV(name, path) {
-  if(MVMap[name]) {
-    const binding = path.scope.getBinding(name);
-    return binding && binding.kind === 'module';
-  }
-  return false;
-}
-
-function isMat(name) {
-  return name.startsWith('mat');
-}
-
-function isVec(name) {
-  return name.startsWith('vec');
-}
-
-function getOperandMV(t, node, path) {
-  if(!t.isCallExpression(node)) return false;
-  const name = node.callee.name || node.callee.object && node.callee.object.name;
-  if(node.callee.object) {
-    const key = `${node.callee.object.name}.${node.callee.property.name}`;
-    const name = RetMap[key];
-    if(name && MVMap[name]) {
-      const binding = path.scope.getBinding(name);
-      return binding && binding.kind === 'module' ? name : null;
-    }
-    if(name) {
-      return null;
-    }
-  }
-  if(MVMap[name]) {
-    const binding = path.scope.getBinding(name);
-    return binding && binding.kind === 'module' ? name : null;
-  }
-  return null;
-}
-
-let arrayIdentifier = 'GL_MATRIX_ARRAY_TYPE';
-
-function createMV(t, name, initObj = {value: 0}) {
-  let args;
-  if(initObj.value == null && t.isArrayExpression(initObj)) {
-    args = initObj.elements;
-  } else {
-    args = Array.from({length: MVMap[name]}).fill(t.numericLiteral(initObj.value));
-  }
-  return t.callExpression(
-    t.memberExpression(
-      t.identifier(arrayIdentifier),
-      t.identifier('of'),
-      false,
-    ),
-    args
-  );
-}
-
-function clean(t, operand) {
-  if(t.isIdentifier(operand.callee)) {
-    return operand.arguments[0];
-  }
-  return operand;
-}
-
-module.exports = function ({types: t}) {
+// eslint-disable-next-line func-names
+export default function ({ types: t }) {
   return {
     visitor: {
-      UnaryExpression: {
+      VariableDeclarator: {
         exit(path) {
-          const operator = path.node.operator;
-          const operand = getOperandMV(t, path.node.argument, path);
-
-          if(operator === '-' && operand) {
-            const node = t.callExpression(
-              t.memberExpression(
-                t.identifier(operand),
-                t.identifier('scale'),
-                false,
-              ),
-              [createMV(t, operand), clean(t, path.node.argument), t.numericLiteral(-1)],
-            );
-
-            path.replaceWith(node);
-          }
-        },
-      },
-      BinaryExpression: {
-        exit(path) {
-          const operator = path.node.operator;
-
-          let left = getOperandMV(t, path.node.left, path);
-          let right = getOperandMV(t, path.node.right, path);
-
-          if(!left && right) {
-            if(t.isArrayExpression(path.node.left)) {
-              const elements = path.node.left.elements;
-              if(elements.length === 2) {
-                left = 'vec2';
-              } else if(elements.length === 3) {
-                left = 'vec3';
-              } else if(elements.length >= 4) {
-                left = 'vec4';
-              }
-              path.node.left = createMV(t, left, path.node.left);
-            } else if(operator === '*' || operator === '==' || operator === '!=') {
-              [left, right] = [right, left];
-              [path.node.left, path.node.right] = [path.node.right, path.node.left];
-            } else if(operator === '+' || operator === '-') {
-              left = right;
-              path.node.left = createMV(t, left, path.node.left);
-            }
-          } else if(left && !right) {
-            if(t.isArrayExpression(path.node.right)) {
-              const elements = path.node.right.elements;
-              if(elements.length === 2) {
-                right = 'vec2';
-              } else if(elements.length === 3) {
-                right = 'vec3';
-              } else if(elements.length >= 4) {
-                right = 'vec4';
-              }
-              path.node.right = createMV(t, right, path.node.right);
-            } else if(operator === '+' || operator === '-') {
-              right = left;
-              path.node.right = createMV(t, right, path.node.right);
-            }
-          }
-
-          if(left) {
-            let op;
-            let rightOperand = path.node.right,
-              leftOperand = path.node.left;
-
-            if(operator === '*') {
-              if(!right) {
-                op = 'scale';
-                if(left === 'mat2' || left === 'mat2d' || left === 'mat3') {
-                  rightOperand = createMV(t, 'vec2', rightOperand);
-                } else if(left === 'mat4') {
-                  rightOperand = createMV(t, 'vec3', rightOperand);
-                }
-              } else if(isMat(left) && isVec(right)) {
-                [left, right] = [right, left];
-                [leftOperand, rightOperand] = [rightOperand, leftOperand];
-                op = `transform${right.slice(0, 1).toUpperCase() + right.slice(1)}`;
-              } else if(isVec(left) && isMat(right)) {
-                // vec * mat = transpose(mat) * vec
-                op = `transform${right.slice(0, 1).toUpperCase() + right.slice(1)}`;
-                rightOperand = t.callExpression(
-                  t.memberExpression(
-                    t.identifier(right),
-                    t.identifier('transpose'),
-                    false,
-                  ),
-                  [createMV(t, right), rightOperand]
-                );
-              } else {
-                op = 'multiply';
-              }
-            } else if(operator === '+') {
-              op = 'add';
-            } else if(operator === '-') {
-              op = 'subtract';
-            } else if(operator === '==' || operator === '!=') {
-              op = 'equals';
-            }
-            if(op) {
-              const creator = op === 'equals' ? [] : [createMV(t, left)];
-              let node = t.callExpression(
-                t.memberExpression(
-                  t.identifier(left),
-                  t.identifier(op),
-                  false,
-                ),
-                [...creator, clean(t, leftOperand), clean(t, rightOperand)],
-              );
-              if(operator === '!=') {
-                node = t.unaryExpression('!', node);
-              }
-              path.replaceWith(node);
+          const { id, init } = path.node;
+          if (t.isIdentifier(id)) {
+            const binding = path.scope.getBinding(id.name);
+            if (binding) {
+              binding._operandType = getOperandType(t, path, init);
             }
           }
         },
       },
       AssignmentExpression: {
+        // TODO: += -= *= /= etc.
         exit(path) {
-          const right = getOperandMV(t, path.node.right, path);
-          const operator = path.node.operator;
-
-          if(right) {
-            let op;
-            if(operator === '*=') {
-              op = 'multiply';
-            } else if(operator === '+=') {
-              op = 'add';
-            } else if(operator === '-=') {
-              op = 'subtract';
-            }
-            if(op) {
-              const node = t.assignmentExpression(
-                '=',
-                path.node.left,
-                t.callExpression(
-                  t.memberExpression(
-                    t.identifier(right),
-                    t.identifier(op),
-                    false,
-                  ),
-                  [path.node.left, path.node.left, clean(t, path.node.right)],
-                ),
-              );
-              path.replaceWith(node);
+          const { left, right, operator } = path.node;
+          if (t.isIdentifier(left)) {
+            const binding = path.scope.getBinding(left.name);
+            if (binding) {
+              const type = getOperandType(t, path, right);
+              if (type) {
+                binding._operandType = type;
+                if (binding.kind !== 'const') {
+                  if (operator === '+=' || operator === '-=' || operator === '*=' || operator === '/=') {
+                    const node = makeBinaryExpression(
+                      t,
+                      path,
+                      type,
+                      left,
+                      right,
+                      operator.slice(0, 1),
+                    );
+                    node._makeCreated = true;
+                    node.arguments.unshift(left);
+                    path.replaceWith(node);
+                  }
+                  if (operator === '=') {
+                    if (t.isCallExpression(right) && t.isMemberExpression(right.callee)) {
+                      const { object, property } = right.callee;
+                      if (t.isIdentifier(object) && t.isIdentifier(property)) {
+                        if (property.name !== 'create' && property.name !== 'fromValues') {
+                          right.arguments[0] = left;
+                          path.replaceWith(right);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         },
       },
       CallExpression: {
         exit(path) {
-          let funcName = path.node.callee.name;
-          let applyTag = false;
-          if(t.isMemberExpression(path.node.callee)) {
-            if(path.node.callee.property.name === 'apply') {
-              funcName = path.node.callee.object.name;
-              applyTag = true;
-            }
-          }
-
-          if(isMV(funcName, path)) {
-            const args = path.node.arguments.map((arg) => {
-              if(getOperandMV(t, arg, path)) {
-                return t.spreadElement(clean(t, arg));
-              }
-              return arg;
-            });
-
-            if(args.length > 1 || t.isSpreadElement(args[0])) {
-              let node = t.memberExpression(
-                t.identifier(funcName),
-                t.identifier('fromValues'),
-                false,
-              );
-              if(applyTag) {
-                node = t.memberExpression(
-                  node,
-                  t.identifier('apply'),
-                  false,
-                );
-                args[0] = t.identifier(funcName);
-              }
-              node = t.callExpression(
-                node,
-                args
-              );
-              path.replaceWith(node);
-            }
-          } else if(getOperandMV(t, path.node, path)) {
-            let name = path.node.callee.object.name;
-            const property = path.node.callee.property.name;
-            if(property !== 'fromValues' && property !== 'create') {
-              const func = glMatrix[name][property];
-              if(func && func.length > path.node.arguments.length) {
-                if(name === 'vec2' && property === 'cross') {
-                  name = 'vec3';
+          const type = getOperandType(t, path);
+          if (type) {
+            if (t.isIdentifier(path.node.callee)) {
+              const args = path.node.arguments;
+              const _type = getOperandType(t, path, args[0]);
+              if (args.length === 1 && type === _type) {
+                path.replaceWith(args[0]);
+              } else if (args.length === 1 && !_type && !t.isSpreadElement(args[0])) {
+                // 用一个参数来构造向量和矩阵
+                const node = fromScalarValues(t, type, args[0]);
+                path.replaceWith(node);
+              } else {
+                const hasType = args.some((arg) => getOperandType(t, path, arg));
+                let node;
+                if (hasType) {
+                  // 用多个参数来构造向量和矩阵
+                  node = t.callExpression(
+                    t.memberExpression(
+                      t.identifier(type),
+                      t.identifier('fromValues'),
+                      false,
+                    ),
+                    spreadArgs(t, path, args),
+                  );
+                  path.replaceWith(node);
+                } else {
+                  node = t.callExpression(
+                    t.memberExpression(
+                      t.identifier(type),
+                      t.identifier('fromValues'),
+                      false,
+                    ),
+                    args,
+                  );
                 }
-                path.node.arguments.unshift(createMV(t, name));
+                path.replaceWith(node);
               }
             }
-            // console.log(name, property, glMatrix[name][property]);
+            if (t.isMemberExpression(path.node.callee) && !path.node._makeCreated) {
+              const { object, property } = path.node.callee;
+              if (t.isIdentifier(object) && t.isIdentifier(property)) {
+                // const funcName = `${object.name}.${property.name}`;
+                if (property.name !== 'create' && property.name !== 'fromValues') {
+                  path.node.arguments.unshift(
+                    makeCreate(t, type),
+                  );
+                  path.node._makeCreated = true;
+                }
+              }
+            }
           }
         },
       },
-      Program: {
-        enter(path, state) {
-          if(state.opts && state.opts.glMatrixArray === false) {
-            arrayIdentifier = 'Array';
+      UnaryExpression: {
+        exit(path) {
+          const type = getOperandType(t, path);
+          if (type) {
+            const { operator, argument } = path.node;
+            if (operator === '-') {
+              if (retmap[`${type}.negate`]) {
+                const node = t.callExpression(
+                  t.memberExpression(
+                    t.identifier(type),
+                    t.identifier('negate'),
+                    false,
+                  ),
+                  [
+                    argument],
+                );
+                path.replaceWith(node);
+              } else {
+                const node = t.callExpression(
+                  t.memberExpression(
+                    t.identifier(type),
+                    t.identifier('multiplyScalar'),
+                    false,
+                  ),
+                  [
+                    argument,
+                    t.numericLiteral(-1),
+                  ],
+                );
+                path.replaceWith(node);
+              }
+            }
+            if (operator === '~' && retmap[`${type}.transpose`]) {
+              const node = t.callExpression(
+                t.memberExpression(
+                  t.identifier(type),
+                  t.identifier('transpose'),
+                  false,
+                ),
+                [
+                  argument],
+              );
+              path.replaceWith(node);
+            }
           }
         },
-        exit(path, state) {
-          path.traverse({
-            CallExpression(p) {
-              const funcName = p.node.callee.name;
-
-              if(isMV(funcName, p) && p.node.arguments.length === 1) {
-                p.replaceWith(clean(t, p.node));
-              }
-            },
-          });
-
-          const body = path.get('body')[0];
-          if(body) {
-            if(arrayIdentifier === 'GL_MATRIX_ARRAY_TYPE') {
-              body.insertBefore(t.variableDeclaration(
-                'var',
-                [t.variableDeclarator(
-                  t.identifier('GL_MATRIX_ARRAY_TYPE'),
-                  t.conditionalExpression(
-                    t.binaryExpression(
-                      '!==',
-                      t.unaryExpression(
-                        'typeof',
-                        t.identifier('Float32Array'),
-                      ),
-                      t.stringLiteral('undefined'),
-                    ),
-                    t.identifier('Float32Array'),
-                    t.identifier('Array'),
-                  ),
-                )],
-              ));
-            } else {
-              body.insertBefore(t.expressionStatement(
-                t.callExpression(
-                  t.memberExpression(
-                    t.memberExpression(
+      },
+      BinaryExpression: {
+        exit(path) {
+          const type = getOperandType(t, path);
+          if (type) {
+            const { left, right, operator } = path.node;
+            const node = makeBinaryExpression(t, path, type, left, right, operator);
+            if (node) path.replaceWith(node);
+          }
+        },
+      },
+      MemberExpression: {
+        exit(path) {
+          const { object, property } = path.node;
+          const type = getOperandType(t, path, object);
+          if (type) {
+            if (t.isIdentifier(property)) {
+              if (type.startsWith('vec') && (property.name === 'x' || (type !== 'vec2' && property.name === 'r') || property.name === 's')) {
+                path.replaceWith(t.memberExpression(path.node.object, t.identifier('0'), true));
+              } else if (type.startsWith('vec') && (property.name === 'y' || (type !== 'vec2' && property.name === 'g') || property.name === 't')) {
+                path.replaceWith(t.memberExpression(path.node.object, t.identifier('1'), true));
+              } else if ((type === 'vec3' || type === 'vec4') && (property.name === 'z' || property.name === 'b' || property.name === 'p')) {
+                path.replaceWith(t.memberExpression(path.node.object, t.identifier('2'), true));
+              } else if (type === 'vec4' && (property.name === 'w' || property.name === 'a' || property.name === 'q')) {
+                path.replaceWith(t.memberExpression(path.node.object, t.identifier('3'), true));
+              } else if (type === 'vec2') {
+                if (/[xy]{2}/.test(property.name)) {
+                  if (property.name === 'xy') {
+                    path.replaceWith(object);
+                  } else {
+                    path.replaceWith(
                       t.callExpression(
-                        t.identifier('require'),
-                        [t.stringLiteral('gl-matrix')]
+                        t.memberExpression(
+                          t.identifier(type),
+                          t.identifier('fromValues'),
+                          false,
+                        ),
+                        [
+                          t.memberExpression(path.node.object, t.identifier('xy'.indexOf(property.name[0]).toString()), true),
+                          t.memberExpression(path.node.object, t.identifier('xy'.indexOf(property.name[1]).toString()), true),
+                        ],
                       ),
-                      t.identifier('glMatrix')
-                    ),
-                    t.identifier('setMatrixArrayType')
-                  ),
-                  [t.identifier('Array')],
-                )
-              ));
+                    );
+                  }
+                } else if (/[st]{2}/.test(property.name)) {
+                  if (property.name === 'st') {
+                    path.replaceWith(object);
+                  } else {
+                    path.replaceWith(
+                      t.callExpression(
+                        t.memberExpression(
+                          t.identifier(type),
+                          t.identifier('fromValues'),
+                          false,
+                        ),
+                        [
+                          t.memberExpression(path.node.object, t.identifier('st'.indexOf(property.name[0]).toString()), true),
+                          t.memberExpression(path.node.object, t.identifier('st'.indexOf(property.name[1]).toString()), true),
+                        ],
+                      ),
+                    );
+                  }
+                }
+              } else if (type === 'vec3') {
+                if (/[xyz]{2,3}/.test(property.name)) {
+                  if (property.name === 'xyz') {
+                    path.replaceWith(object);
+                  } else {
+                    const args = [...property.name].map((c) => t.memberExpression(path.node.object, t.identifier('xyz'.indexOf(c).toString()), true));
+                    path.replaceWith(
+                      t.callExpression(
+                        t.memberExpression(
+                          t.identifier(`vec${property.name.length}`),
+                          t.identifier('fromValues'),
+                          false,
+                        ),
+                        args,
+                      ),
+                    );
+                  }
+                } else if (/[rgb]{2,3}/.test(property.name)) {
+                  if (property.name === 'rgb') {
+                    path.replaceWith(object);
+                  } else {
+                    const args = [...property.name].map((c) => t.memberExpression(path.node.object, t.identifier('rgb'.indexOf(c).toString()), true));
+                    path.replaceWith(
+                      t.callExpression(
+                        t.memberExpression(
+                          t.identifier(`vec${property.name.length}`),
+                          t.identifier('fromValues'),
+                          false,
+                        ),
+                        args,
+                      ),
+                    );
+                  }
+                } else if (/[stq]{2,3}/.test(property.name)) {
+                  if (property.name === 'stq') {
+                    path.replaceWith(object);
+                  } else {
+                    const args = [...property.name].map((c) => t.memberExpression(path.node.object, t.identifier('stq'.indexOf(c).toString()), true));
+                    path.replaceWith(
+                      t.callExpression(
+                        t.memberExpression(
+                          t.identifier(`vec${property.name.length}`),
+                          t.identifier('fromValues'),
+                          false,
+                        ),
+                        args,
+                      ),
+                    );
+                  }
+                }
+              } else if (type === 'vec4') {
+                if (/[xyzw]{2,4}/.test(property.name)) {
+                  if (property.name === 'xyzw') {
+                    path.replaceWith(object);
+                  } else {
+                    const args = [...property.name].map((c) => t.memberExpression(path.node.object, t.identifier('xyzw'.indexOf(c).toString()), true));
+                    path.replaceWith(
+                      t.callExpression(
+                        t.memberExpression(
+                          t.identifier(`vec${property.name.length}`),
+                          t.identifier('fromValues'),
+                          false,
+                        ),
+                        args,
+                      ),
+                    );
+                  }
+                } else if (/[rgba]{2,4}/.test(property.name)) {
+                  if (property.name === 'rgba') {
+                    path.replaceWith(object);
+                  } else {
+                    const args = [...property.name].map((c) => t.memberExpression(path.node.object, t.identifier('rgba'.indexOf(c).toString()), true));
+                    path.replaceWith(
+                      t.callExpression(
+                        t.memberExpression(
+                          t.identifier(`vec${property.name.length}`),
+                          t.identifier('fromValues'),
+                          false,
+                        ),
+                        args,
+                      ),
+                    );
+                  }
+                } else if (/[stpq]{2,4}/.test(property.name)) {
+                  if (property.name === 'stpq') {
+                    path.replaceWith(object);
+                  } else {
+                    const args = [...property.name].map((c) => t.memberExpression(path.node.object, t.identifier('stpq'.indexOf(c).toString()), true));
+                    path.replaceWith(
+                      t.callExpression(
+                        t.memberExpression(
+                          t.identifier(`vec${property.name.length}`),
+                          t.identifier('fromValues'),
+                          false,
+                        ),
+                        args,
+                      ),
+                    );
+                  }
+                }
+              }
             }
           }
         },
       },
     },
   };
-};
+}

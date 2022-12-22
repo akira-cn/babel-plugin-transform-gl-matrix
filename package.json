@@ -1,35 +1,26 @@
 {
   "name": "babel-plugin-transform-gl-matrix",
-  "version": "0.6.0",
-  "description": "",
+  "version": "1.0.0",
+  "description": "A babel plugin for gl-matrix",
   "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "compile": "babel test/index.js",
-    "test": "babel test/index.js -o test/out.js && ava test/out.js"
+    "compile:case": "babel test/simple.js",
+    "test": "babel test/index.js -o test/out.cjs && ava test/out.cjs",
+    "lint": "eslint --fix --ext .js src test"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@babel/cli": "^7.2.3",
-    "@babel/core": "^7.3.3",
-    "@babel/preset-env": "^7.3.1",
-    "@babel/register": "^7.4.0",
-    "ava": "^1.2.1",
-    "eslint": "^5.14.1",
-    "eslint-config-sprite": "^1.0.6",
-    "eslint-plugin-html": "^5.0.3"
-  },
-  "dependencies": {
-    "gl-matrix": "^3.0.0"
-  },
-  "ava": {
-    "babel": {
-      "testOptions": {
-        "plugins": [
-          "./src/index.js"
-        ]
-      }
-    }
+    "@babel/cli": "^7.19.3",
+    "@babel/core": "^7.20.5",
+    "@babel/preset-env": "^7.20.2",
+    "ava": "^5.1.0",
+    "eslint": "^8.29.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "gl-matrix": "^3.4.3"
   }
 }

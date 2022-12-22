@@ -1,5 +1,19 @@
-import {vec2, vec3, mat2, mat2d, mat3, mat4, quat, quat2} from 'gl-matrix';
-const test = require('ava');
+import {
+  vec2,
+  vec3,
+  mat2,
+  mat2d,
+  mat3,
+  mat4,
+  quat,
+  quat2,
+  glMatrix,
+} from 'gl-matrix';
+
+// eslint-disable-next-line import/no-unresolved
+import test from 'ava';
+
+glMatrix.setMatrixArrayType(Array);
 
 test('mat2d expand', (t) => {
   const arr = [1, 2, 3, 4, 5, 6];
@@ -10,29 +24,29 @@ test('mat2d expand', (t) => {
 });
 
 test('create vec2', (t) => {
-  const v1 = vec2(1.0, 1.0),
-    v2 = vec2.fromValues(1.0, 1.0);
+  const v1 = vec2(1.0, 1.0);
+  const v2 = vec2.fromValues(1.0, 1.0);
 
   t.deepEqual(v1, v2);
 });
 
 test('create vec3', (t) => {
-  const v1 = vec3(1.0, 1.0, 1.0),
-    v2 = vec3.fromValues(1.0, 1.0, 1.0);
+  const v1 = vec3(1.0, 1.0, 1.0);
+  const v2 = vec3.fromValues(1.0, 1.0, 1.0);
 
   t.deepEqual(v1, v2);
 
-  const v3 = vec2(1.0, 1.0),
-    v4 = vec3(vec2(v3), 1.0);
+  const v3 = vec2(1.0, 1.0);
+  const v4 = vec3(vec2(v3), 1.0);
 
   t.deepEqual(v1, v4);
 });
 
 test('create mat3', (t) => {
-  const m1 = 2 * mat3(1, 0, 0, 0, 1, 0, 0, 0, 1),
-    m2 = mat3(1, 0, 0, 0, 1, 0, 0, 0, 1) * 2;
+  const m1 = 2 * mat3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+  const m2 = mat3(1, 0, 0, 0, 1, 0, 0, 0, 1) * 2;
 
-  t.deepEqual(m1, mat3(2, 0, 0, 0, 2, 0, 0, 0, 1));
+  t.deepEqual(m1, mat3(2, 0, 0, 0, 2, 0, 0, 0, 2));
   t.deepEqual(m1, m2);
 });
 
@@ -141,17 +155,17 @@ test('multiply', (t) => {
   const m1 = mat2d(1, 0, 0, 1, 0, 0);
   const m2 = mat2d(1, 2, 3, 4, 5, 6);
 
-  t.deepEqual(mat2d(m1) * mat2d(m2), mat2d.multiply(mat2d.create(), m1, m2));
+  t.deepEqual(mat2d(m1) * mat2d(m2), mat2d.multiply(m1, m2));
 
   const q1 = quat(1, 2, 3, 4);
   const q2 = quat(5, 6, 7, 8);
 
-  t.deepEqual(quat(q1) * quat(q2), quat.multiply(quat.create(), q1, q2));
+  t.deepEqual(quat(q1) * quat(q2), quat.multiply(q1, q2));
 
   const q3 = quat2(1, 2, 3, 4, 5, 6, 7, 8);
   const q4 = quat2(1, 0, 3, 5, 9, 8, 6, 4);
 
-  t.deepEqual(quat2(q3) * quat2(q4), quat2.multiply(quat2.create(), q3, q4));
+  t.deepEqual(quat2(q3) * quat2(q4), quat2.multiply(q3, q4));
 });
 
 test('scale', (t) => {
@@ -186,14 +200,17 @@ test('transform', (t) => {
   t.deepEqual(v1, mat3(m5) * vec2(v1));
 
   const m6 = mat3(1, 2, 3, 4, 5, 6, 7, 8, 9);
-  t.deepEqual(mat3(m6) * vec2(v1), vec2.transformMat3(vec2.create(), v1, m6));
+  t.deepEqual(mat3(m6) * vec2(v1), vec2.transformMat3(v1, m6));
 
   const m7 = mat4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-  t.deepEqual(mat4(m7) * vec2(v1), vec2.transformMat4(vec2.create(), v1, m7));
+  t.deepEqual(mat4(m7) * vec2(v1), vec2.transformMat4(v1, m7));
 
-  t.deepEqual(mat4(m7) * [1, 1, 1], vec3.transformMat4(vec3.create(), vec3(...v1, 1), m7));
+  t.deepEqual(mat4(m7) * [1, 1, 1], vec3.transformMat4(vec3(...v1, 1), m7));
 
-  t.deepEqual(vec2(v1) * mat4(m7), vec2.transformMat4(vec2.create(), v1, mat4.transpose(mat4.create(), m7)));
+  t.deepEqual(
+    vec2(v1) * mat4(m7),
+    vec2.transformMat4(v1, mat4.transpose(m7)),
+  );
 });
 
 test('+=, -=, *=', (t) => {
@@ -211,7 +228,7 @@ test('+=, -=, *=', (t) => {
   v3 *= vec2(2, 2);
 
   t.is(v3, v4);
-  t.deepEqual(v3, vec2.multiply(vec2.create(), vec2.fromValues(3, 4), vec2.fromValues(2, 2)));
+  t.deepEqual(v3, vec2.multiply(vec2.fromValues(3, 4), vec2.fromValues(2, 2)));
 });
 
 test('scope', (t) => {
