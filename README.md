@@ -103,7 +103,7 @@ const v1 = vec3(1, 2, 3);
 const v2 = v1.xy; // with plugin
 ```
 
-**Note: For all methods whose first parameter is out, when using this plug-in, you should ignore the `out` and directly get the return value. **
+**Note: For all methods whose first parameter is out, when using this plug-in, you should ignore the `out` and directly get the return value.**
 
 ## Usage
 
