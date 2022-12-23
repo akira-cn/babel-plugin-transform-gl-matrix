@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-transform-gl-matrix",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A babel plugin for gl-matrix",
   "main": "src/index.js",
   "type": "module",

@@ -26,7 +26,7 @@ export default function ({ types: t }) {
           if (t.isIdentifier(left)) {
             const binding = path.scope.getBinding(left.name);
             if (binding) {
-              const type = getOperandType(t, path, right);
+              const type = getOperandType(t, path, left) || getOperandType(t, path, right);
               if (type) {
                 binding._operandType = type;
                 if (binding.kind !== 'const') {
