@@ -120,7 +120,7 @@ const v2 = v1.xy; // with plugin
     }]
   ],
   "plugins": [
-    "./src/index.js"
+    "transform-gl-matrix"
   ]
 }
 ```
