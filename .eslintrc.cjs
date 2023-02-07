@@ -1,4 +1,5 @@
 module.exports = {
+  jest: true,
   extends: 'airbnb-base',
   rules: {
     'no-console': 'off',

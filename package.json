@@ -7,7 +7,8 @@
   "scripts": {
     "compile": "babel test/index.js",
     "compile:case": "babel test/simple.js",
-    "test": "babel test/index.js -o test/out.cjs && ava test/out.cjs",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "lint": "eslint --fix --ext .js src test"
   },
   "keywords": [],
@@ -17,10 +18,11 @@
     "@babel/cli": "^7.19.3",
     "@babel/core": "^7.20.5",
     "@babel/preset-env": "^7.20.2",
-    "ava": "^5.1.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.29.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.26.0",
-    "gl-matrix": "^3.4.3"
+    "gl-matrix": "^3.4.3",
+    "jest": "^29.3.1"
   }
 }
