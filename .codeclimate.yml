@@ -7,6 +7,10 @@ checks:
     enabled: true
     config:
       threshold: 200
+  file-lines:
+    enabled: true
+    config:
+      threshold: 800
 exclude_patterns:
 - "test/"
 - "**/.eslintrc.cjs"
