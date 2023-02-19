@@ -19,5 +19,13 @@ jobs:
           registry-url: https://registry.npmjs.org
       - name: Install dependencies 📦️
         run: npm install
-      - name: test
-        run: npm run test:coverage
+      # - name: test
+      #   run: npm run test:coverage
+      - name: Code Climate Coverage Action
+        uses: paambaati/codeclimate-action@v3.2.0
+        env:
+          CC_TEST_REPORTER_ID: 0cad7f41ea82b1b3ae2b1d64cc05c040ed59a17c16ca0a125ff711031b5905be
+        with:
+          coverageCommand: npm run test:coverage
+          debug: true
+
