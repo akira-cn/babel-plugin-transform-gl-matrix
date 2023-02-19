@@ -1,0 +1,13 @@
+checks:
+  method-complexity:
+    enabled: true
+    config:
+      threshold: 50
+  method-lines:
+    enabled: true
+    config:
+      threshold: 200
+exclude_patterns:
+- "test/"
+- "**/.eslintrc.cjs"
+- "**/babel.config.cjs"
